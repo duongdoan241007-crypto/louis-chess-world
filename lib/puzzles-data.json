@@ -1,0 +1,114 @@
+[
+  {
+    "id": "queen-rescue-01",
+    "title": "Giải cứu quân Hậu",
+    "subtitle": "Đối phương sơ hở rồi! Con có nhìn thấy không?",
+    "difficulty": "Dễ",
+    "theme": "Bắt quân",
+    "fen": "4k3/8/8/8/8/8/4q3/4K3 w - - 0 1",
+    "solution": [
+      "e1e2"
+    ],
+    "hint": "Quân Hậu đen đang chiếu Vua trắng. Vua có thể bắt quân Hậu không?",
+    "explanation": "Vua trắng đi từ e1 đến e2 và bắt quân Hậu. Ô e2 không bị Vua đen khống chế.",
+    "reward": 10,
+    "zone": "Vương quốc Tốt",
+    "rewardPoints": 100
+  },
+  {
+    "id": "bishop-snack-02",
+    "title": "Tượng bắt Hậu",
+    "subtitle": "Đường chéo đã thông. Tìm nước đi sáng suốt!",
+    "difficulty": "Dễ",
+    "theme": "Bắt quân",
+    "fen": "4k3/8/8/6q1/8/8/8/2B1K3 w - - 0 1",
+    "solution": [
+      "c1g5"
+    ],
+    "hint": "Hãy nhìn quân Tượng ở c1. Nó đi theo đường nào?",
+    "explanation": "Tượng đi theo đường chéo từ c1 đến g5 và bắt quân Hậu đen.",
+    "reward": 10,
+    "zone": "Thành phố Tượng",
+    "rewardPoints": 100
+  },
+  {
+    "id": "rook-laser-03",
+    "title": "Tia laser của Xe",
+    "subtitle": "Một cột dọc đang mở. Xe có thể làm gì?",
+    "difficulty": "Dễ",
+    "theme": "Bắt quân",
+    "fen": "4k3/q7/8/8/8/8/8/R3K3 w - - 0 1",
+    "solution": [
+      "a1a7"
+    ],
+    "hint": "Xe đi ngang và dọc. Cột a đang trống!",
+    "explanation": "Xe trắng đi thẳng từ a1 lên a7 và bắt quân Hậu.",
+    "reward": 10,
+    "zone": "Tòa tháp Xe",
+    "rewardPoints": 100
+  },
+  {
+    "id": "knight-hop-04",
+    "title": "Cú nhảy của Mã",
+    "subtitle": "Mã không đi theo đường thẳng. Hãy tìm chữ L!",
+    "difficulty": "Dễ",
+    "theme": "Bắt quân",
+    "fen": "4k3/8/8/3q4/1N6/8/8/4K3 w - - 0 1",
+    "solution": [
+      "b4d5"
+    ],
+    "hint": "Từ b4, Mã có thể nhảy đến d5 không?",
+    "explanation": "Mã đi theo hình chữ L từ b4 đến d5 và bắt quân Hậu.",
+    "reward": 10,
+    "zone": "Khu rừng Mã",
+    "rewardPoints": 100
+  },
+  {
+    "id": "pawn-capture-05",
+    "title": "Tốt nhỏ làm việc lớn",
+    "subtitle": "Đừng xem thường một quân Tốt nhé!",
+    "difficulty": "Dễ",
+    "theme": "Bắt quân",
+    "fen": "4k3/8/8/3q4/4P3/8/8/4K3 w - - 0 1",
+    "solution": [
+      "e4d5"
+    ],
+    "hint": "Tốt trắng có thể bắt quân ở ô chéo phía trước bên trái.",
+    "explanation": "Tốt trắng từ e4 bắt quân Hậu tại d5 theo đường chéo.",
+    "reward": 10,
+    "zone": "Vương quốc Tốt",
+    "rewardPoints": 100
+  },
+  {
+    "id": "queen-duel-06",
+    "title": "Nữ hoàng đối đầu",
+    "subtitle": "Hai quân Hậu đang nhìn thấy nhau. Đến lượt con!",
+    "difficulty": "Vừa",
+    "theme": "Bắt quân",
+    "fen": "4k3/8/8/3q4/8/8/8/3QK3 w - - 0 1",
+    "solution": [
+      "d1d5"
+    ],
+    "hint": "Đường d đang thông từ d1 đến d5.",
+    "explanation": "Hậu trắng đi dọc cột d và bắt Hậu đen ở d5.",
+    "reward": 15,
+    "zone": "Cung điện Hậu",
+    "rewardPoints": 150
+  },
+  {
+    "id": "king-courage-07",
+    "title": "Vua dũng cảm",
+    "subtitle": "Đôi khi Vua cũng có thể tự bảo vệ mình!",
+    "difficulty": "Vừa",
+    "theme": "Bắt quân",
+    "fen": "4k3/8/8/8/8/8/7q/6K1 w - - 0 1",
+    "solution": [
+      "g1h2"
+    ],
+    "hint": "Quân Hậu đen đang ở ngay cạnh Vua trắng. Ô h2 có an toàn không?",
+    "explanation": "Vua trắng bắt Hậu ở h2. Vua đen ở quá xa để khống chế ô này.",
+    "reward": 15,
+    "zone": "Lâu đài Vua",
+    "rewardPoints": 150
+  }
+]
