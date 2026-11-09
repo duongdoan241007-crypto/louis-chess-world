@@ -18,7 +18,7 @@ type RecoveryStep = "idle" | "email" | "otp" | "password";
 
 function friendlyAuthError(message: string) {
   const value = message.toLowerCase();
-  if (value.includes("invalid login credentials")) return "Email hoặc mật khẩu chưa chính xác. Hãy kiểm tra lại tài khoản trong Supabase Authentication → Users.";
+  if (value.includes("invalid login credentials") || value.includes("invalid_credentials")) return "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại và thử lần nữa.";
   if (value.includes("email not confirmed")) return "Email giáo viên chưa được xác nhận. Hãy xác nhận email trong Supabase Authentication → Users rồi thử lại.";
   if (value.includes("too many requests")) return "Bạn đã thử quá nhiều lần. Hãy đợi vài phút rồi thử lại.";
   if (value.includes("fetch") || value.includes("network") || value.includes("timeout")) return "Không kết nối được máy chủ Supabase. Hãy kiểm tra Project URL và Publishable Key trong Vercel.";
@@ -92,32 +92,35 @@ export default function LoginPage() {
     if (loading) return;
     clearMessages();
 
-    // Validate explicitly so the login action always gives visible feedback
-    // instead of being silently blocked by native browser form validation.
-    if (!email.trim() || !password) {
-      setError("Vui lòng nhập email và mật khẩu giáo viên trước khi đăng nhập.");
+    // Use manual validation so the form always renders an in-page error.
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !password) {
+      setError("Vui lòng nhập email và mật khẩu giáo viên.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError("Địa chỉ email chưa đúng định dạng. Hãy kiểm tra lại.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setError("Email không đúng định dạng. Vui lòng kiểm tra lại.");
       return;
     }
 
     const supabase = getSupabase();
     if (!supabase) {
-      setError("Chưa cấu hình Supabase. Hãy kiểm tra NEXT_PUBLIC_SUPABASE_URL và NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY trong Vercel.");
+      setError("Chưa kết nối được Supabase. Hãy kiểm tra cấu hình Project URL và Publishable Key trong Vercel.");
       return;
     }
 
+    // This status changes immediately when the button is activated.
     setLoading(true);
+    setNotice("Đang kiểm tra email và mật khẩu...");
     try {
       const signInResult = await Promise.race([
-        supabase.auth.signInWithPassword({ email: email.trim(), password }),
+        supabase.auth.signInWithPassword({ email: normalizedEmail, password }),
         new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("timeout")), 15000)),
       ]);
 
       const { data, error: loginError } = signInResult;
       if (loginError || !data.user) {
+        setNotice("");
         setError(friendlyAuthError(loginError?.message ?? "Missing user"));
         return;
       }
@@ -129,12 +132,14 @@ export default function LoginPage() {
 
       const { data: profile, error: profileError } = profileResult;
       if (profileError) {
+        setNotice("");
         console.error("Teacher profile lookup failed:", profileError);
         await supabase.auth.signOut();
         setError("Đăng nhập Supabase thành công nhưng không đọc được hồ sơ giáo viên. Cần kiểm tra bảng profiles và chính sách RLS trong Supabase.");
         return;
       }
       if (!profile || profile.role !== "teacher" || !profile.is_active) {
+        setNotice("");
         await supabase.auth.signOut();
         setError("Tài khoản đã đăng nhập nhưng chưa có hồ sơ role = teacher hoặc tài khoản đang bị khóa. Cần kiểm tra public.profiles trong Supabase.");
         return;
@@ -144,6 +149,7 @@ export default function LoginPage() {
       router.refresh();
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "unknown";
+      setNotice("");
       console.error("Teacher sign-in failed:", caught);
       setError(friendlyAuthError(message));
     } finally {
@@ -332,13 +338,53 @@ export default function LoginPage() {
           ) : null}
 
           {mode === "teacher" && recoveryStep === "idle" ? (
-            <form className="auth-form" onSubmit={(event) => { event.preventDefault(); void handleTeacherLogin(); }}>
-              <label>Email giáo viên<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="teacher@example.com" required/></label>
-              <label>Mật khẩu<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mật khẩu tài khoản" required/></label>
+            <div
+              className="auth-form"
+              style={{ position: "relative", zIndex: 50 }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void handleTeacherLogin();
+                }
+              }}
+            >
+              <label>
+                Email giáo viên
+                <input
+                  type="text"
+                  inputMode="email"
+                  autoComplete="username"
+                  value={email}
+                  onChange={(event) => { setEmail(event.target.value); clearMessages(); }}
+                  placeholder="teacher@example.com"
+                  aria-label="Email giáo viên"
+                />
+              </label>
+              <label>
+                Mật khẩu
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => { setPassword(event.target.value); clearMessages(); }}
+                  placeholder="Mật khẩu tài khoản"
+                  aria-label="Mật khẩu giáo viên"
+                />
+              </label>
               <p className="auth-helper"><ShieldCheck size={14}/> Tài khoản giáo viên được tạo và cấp quyền trong Supabase.</p>
-              <button type="button" onClick={openRecovery} disabled={loading} style={{ justifySelf: "end", border: 0, background: "transparent", color: "#4263eb", fontSize: 12, fontWeight: 700, padding: "2px 0" }}>Quên mật khẩu?</button>
-              <button type="button" className="auth-submit" onClick={() => { void handleTeacherLogin(); }} disabled={loading} style={{ width: "100%", cursor: loading ? "wait" : "pointer", position: "relative", zIndex: 2, pointerEvents: "auto" }}>{loading ? "Đang kiểm tra tài khoản..." : "Mở Teacher Studio"}<BookOpen size={17}/></button>
-            </form>
+              <button type="button" onClick={openRecovery} disabled={loading} style={{ justifySelf: "end", border: 0, background: "transparent", color: "#4263eb", fontSize: 12, fontWeight: 700, padding: "2px 0", position: "relative", zIndex: 100, pointerEvents: "auto" }}>Quên mật khẩu?</button>
+              <button
+                type="button"
+                className="auth-submit"
+                onClick={() => { void handleTeacherLogin(); }}
+                disabled={loading}
+                style={{ width: "100%", minHeight: 52, cursor: loading ? "wait" : "pointer", position: "relative", zIndex: 1000, pointerEvents: "auto", touchAction: "manipulation" }}
+                aria-label="Mở Teacher Studio"
+              >
+                {loading ? "Đang kiểm tra tài khoản..." : "Mở Teacher Studio"}
+                <BookOpen size={17}/>
+              </button>
+            </div>
           ) : null}
 
           {recoveryStep === "email" ? (
