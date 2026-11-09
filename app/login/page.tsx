@@ -126,3 +126,9 @@ export default function LoginPage() {
           </form>}
           {error && <p className="auth-error" role="alert" aria-live="polite">{error}</p>}
         </>}
+
+        <div className="auth-foot">Học vui · Nghĩ sâu · Chơi đẹp</div>
+      </section>
+    </main>
+  );
+}
