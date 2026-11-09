@@ -88,10 +88,20 @@ export default function LoginPage() {
     clearMessages();
   }
 
-  async function handleTeacherLogin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleTeacherLogin() {
     if (loading) return;
     clearMessages();
+
+    // Validate explicitly so the login action always gives visible feedback
+    // instead of being silently blocked by native browser form validation.
+    if (!email.trim() || !password) {
+      setError("Vui lòng nhập email và mật khẩu giáo viên trước khi đăng nhập.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("Địa chỉ email chưa đúng định dạng. Hãy kiểm tra lại.");
+      return;
+    }
 
     const supabase = getSupabase();
     if (!supabase) {
@@ -322,12 +332,12 @@ export default function LoginPage() {
           ) : null}
 
           {mode === "teacher" && recoveryStep === "idle" ? (
-            <form className="auth-form" onSubmit={handleTeacherLogin}>
+            <form className="auth-form" onSubmit={(event) => { event.preventDefault(); void handleTeacherLogin(); }}>
               <label>Email giáo viên<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="teacher@example.com" required/></label>
               <label>Mật khẩu<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mật khẩu tài khoản" required/></label>
               <p className="auth-helper"><ShieldCheck size={14}/> Tài khoản giáo viên được tạo và cấp quyền trong Supabase.</p>
               <button type="button" onClick={openRecovery} disabled={loading} style={{ justifySelf: "end", border: 0, background: "transparent", color: "#4263eb", fontSize: 12, fontWeight: 700, padding: "2px 0" }}>Quên mật khẩu?</button>
-              <button type="submit" className="auth-submit" disabled={loading}>{loading ? "Đang kiểm tra tài khoản..." : "Mở Teacher Studio"}<BookOpen size={17}/></button>
+              <button type="button" className="auth-submit" onClick={() => { void handleTeacherLogin(); }} disabled={loading} style={{ width: "100%", cursor: loading ? "wait" : "pointer", position: "relative", zIndex: 2, pointerEvents: "auto" }}>{loading ? "Đang kiểm tra tài khoản..." : "Mở Teacher Studio"}<BookOpen size={17}/></button>
             </form>
           ) : null}
 
