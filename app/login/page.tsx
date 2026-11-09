@@ -1,123 +1,96 @@
-                  Mã OTP 6 chữ số
-                  <input
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    value={otp}
-                    onChange={(event) =>
-                      setOtp(
-                        event.target.value.replace(/\D/g, "").slice(0, 6)
-                      )
-                    }
-                    placeholder="123456"
-                    required
-                    minLength={6}
-                    maxLength={6}
-                  />
-                </label>
+"use client";
 
-                <label>
-                  Mật khẩu mới
-                  <input
-                    type="password"
-                    autoComplete="new-password"
-                    value={newPassword}
-                    onChange={(event) =>
-                      setNewPassword(event.target.value)
-                    }
-                    placeholder="Ít nhất 8 ký tự"
-                    required
-                    minLength={8}
-                  />
-                </label>
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  BookOpen,
+  KeyRound,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 
-                <label>
-                  Nhập lại mật khẩu mới
-                  <input
-                    type="password"
-                    autoComplete="new-password"
-                    value={confirmPassword}
-                    onChange={(event) =>
-                      setConfirmPassword(event.target.value)
-                    }
-                    placeholder="Nhập lại mật khẩu mới"
-                    required
-                    minLength={8}
-                  />
-                </label>
+type RecoveryStep = "login" | "email" | "otp";
 
-                <button
-                  type="submit"
-                  className="auth-submit"
-                  disabled={loading}
-                >
-                  {loading ? "Đang cập nhật..." : "Xác nhận mật khẩu mới"}
-                  <ShieldCheck size={17} />
-                </button>
+function friendlyAuthError(message: string) {
+  const value = message.toLowerCase();
 
-                <button
-                  type="button"
-                  onClick={sendRecoveryCode}
-                  disabled={loading}
-                  style={{
-                    display: "block",
-                    margin: "12px auto 0",
-                    border: 0,
-                    background: "transparent",
-                    color: "#4361ee",
-                    cursor: loading ? "not-allowed" : "pointer",
-                    fontSize: "14px",
-                  }}
-                >
-                  Gửi lại mã OTP
-                </button>
+  if (value.includes("invalid login credentials")) {
+    return "Email hoặc mật khẩu chưa chính xác. Hãy kiểm tra lại tài khoản.";
+  }
+  if (value.includes("email not confirmed")) {
+    return "Email giáo viên chưa được xác nhận trong Supabase.";
+  }
+  if (value.includes("too many requests")) {
+    return "Bạn đã thử quá nhiều lần. Hãy đợi vài phút rồi thử lại.";
+  }
+  if (
+    value.includes("fetch") ||
+    value.includes("network") ||
+    value.includes("timeout")
+  ) {
+    return "Không kết nối được Supabase. Hãy kiểm tra cấu hình máy chủ.";
+  }
 
-                <button
-                  type="button"
-                  onClick={backToTeacherLogin}
-                  style={{
-                    display: "block",
-                    margin: "10px auto 0",
-                    border: 0,
-                    background: "transparent",
-                    color: "#666",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                  }}
-                >
-                  Quay lại đăng nhập
-                </button>
-              </form>
-            )}
-
-            {error && (
-              <p
-                className="auth-error"
-                role="alert"
-                aria-live="polite"
-              >
-                {error}
-              </p>
-            )}
-
-            {notice && (
-              <p
-                role="status"
-                aria-live="polite"
-                style={{
-                  marginTop: "14px",
-                  color: "#247a45",
-                  fontSize: "14px",
-                  lineHeight: 1.5,
-                }}
-              >
-                {notice}
-              </p>
-            )}
-          </>
-        )}
-
-        <div className="auth-foot">Học vui · Nghĩ sâu · Chơi đẹp</div>
-      </section>
-    </main>
-  );
+  return "Đăng nhập chưa thành công. Hãy kiểm tra lại thông tin và thử lại.";
 }
+
+function friendlyRecoveryError(message: string) {
+  const value = message.toLowerCase();
+
+  if (
+    value.includes("expired") ||
+    value.includes("invalid") ||
+    value.includes("token")
+  ) {
+    return "Mã OTP không đúng hoặc đã hết hạn. Hãy kiểm tra email và thử lại.";
+  }
+  if (
+    value.includes("rate") ||
+    value.includes("too many") ||
+    value.includes("limit")
+  ) {
+    return "Bạn đã yêu cầu mã quá nhiều lần. Hãy đợi vài phút rồi thử lại.";
+  }
+  if (value.includes("smtp") || value.includes("email")) {
+    return "Không gửi được email. Hãy kiểm tra cấu hình SMTP trong Supabase.";
+  }
+
+  return "Có lỗi xảy ra. Hãy thử lại. Nếu vẫn lỗi, kiểm tra nhật ký Supabase.";
+}
+
+export default function LoginPage() {
+  const router = useRouter();
+
+  const [mode, setMode] = useState<"student" | "teacher">("student");
+  const [recoveryStep, setRecoveryStep] = useState<RecoveryStep>("login");
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [studentCode, setStudentCode] = useState("");
+  const [pin, setPin] = useState("");
+
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [recoveryVerified, setRecoveryVerified] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  async function handleTeacherLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (loading) return;
+
+    setError("");
+    setNotice("");
+
+    const supabase = getSupabase();
+
+    if (!supabase) {
+      setError(
+        "Chưa cấu hình Supabase. Hãy kiểm tra NEXT_PUBLIC_SUPABASE_URL và NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY trong Vercel."
